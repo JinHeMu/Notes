@@ -1,0 +1,246 @@
+**闭式计算**：数学上有解析解（高效但受限）
+
+**采样算法**：通过随机样本近似（通用但开销大）
+
+**概率 (Probability)**：已知模型参数 θ，问某个观测结果 x 的可能性，写法：P(x | θ)
+
+ **似然 (Likelihood)**：已知观测结果 x，反过来考察不同参数 θ 的合理性，写法：L(θ | x) = P(x | θ)
+
+# 2 递归状态估计
+
+## 置信分布
+
+$$x_t$$的置信度（后验概率）：
+$$
+bel(x_t) = p(x_t | z_{1:t},u_{1:t})
+$$
+预测：
+$$
+\overline{bel}(x_t) = p(x_t | z_{1:t},u_{1:t})
+$$
+
+- 初始置信度$p(x_0)$
+- 测量概率$p(z_t | x_t)$
+- 状态转移概率$p(x_t | u_t, x_{t-1})$
+
+## 贝叶斯滤波算法
+
+$$
+\overline{bel}(x_t) = \int p(x_t | u_t,x_{t-1})bel(x_t)dx_{t-1}\\
+bel(x_t) = \eta p(z_t | x_t)\overline{bel}(x_t)
+$$
+
+# 3 高斯滤波
+
+多元正态分布：
+$$
+p(x) = det(2\pi\Sigma)^{-\frac{1}{2}}\exp\left( -\frac{1}{2} (\mathbf{x} - \mathbf{\mu})^\top \mathbf{\Sigma}^{-1} (\mathbf{x} - \mathbf{\mu}) \right)
+$$
+
+
+## 卡尔曼滤波
+
+状态：
+$$
+x_t = A_t x_{t-1} + B_t u_t + \varepsilon_t
+$$
+状态转移概率：
+$$
+p(x_t|u_t, x_{t-1}) = det(2\pi R_t)^{-\frac{1}{2}}\exp\left( -\frac{1}{2} (\mathbf{x} - A_t x_{t-1} - B_t u_t)^\top R_t^{-1} (\mathbf{x} - A_t x_{t-1} - B_t u_t) \right)
+$$
+观测：
+$$
+z_t = C_tx_t + \delta_t
+$$
+测量概率:
+$$
+p(z_{t}|x_{t})=\det(2\pi Q_{t})^{-\frac{1}{2}}\exp\left\{-\frac{1}{2}(z_{t}-C_{t}x_{t})^{T}Q_{t}^{-1}(z_{t}-C_{t}x_{t})\right\}
+$$
+初始置信度：
+$$
+\mathrm{bel}(x_{0})=p(x_{0})=\det(2\pi\Sigma_{0})^{-\frac{1}{2}}\exp\left\{-\frac{1}{2}(x_{0}-\mu_{0})^{T}\Sigma_{0}^{-1}(x_{0}-\mu_{0})\right\}
+$$
+卡尔曼滤波伪代码：
+$$
+\begin{aligned}
+&\bar{\mu}_t = A_t \mu_{t-1} + B_t u_t \\
+&\bar{\Sigma}_t = A_t \Sigma_{t-1} A_t^T + R_t \\
+&K_t = \bar{\Sigma}_t C_t^T (C_t \bar{\Sigma}_t C_t^T + Q_t)^{-1} \\
+&\mu_t = \bar{\mu}_t + K_t (z_t - C_t \bar{\mu}_t) \\
+&\Sigma_t = (I - K_t C_t) \bar{\Sigma}_t
+\end{aligned}
+$$
+
+## 拓展卡尔曼滤波
+
+状态：
+$$
+x_t = g(u_t,x_{t-1})+ \varepsilon_t\\
+$$
+观测：
+$$
+z_t = h(x_t) + \delta_t
+$$
+**状态和观测方程非线性，线性化近似后同卡尔曼滤波。**
+
+## 无迹卡尔曼滤波
+
+## 信息滤波
+
+# 4 非参数滤波
+
+高斯滤波通过已有参数（均值，方差）去估计，而非参数滤波通过有限多的值来近似后验。
+
+## 直方图滤波
+
+
+
+## 粒子滤波
+
+粒子：
+$$
+x_t^{[m]} \sim p(x_t|z_{1:t},u_{1:t})
+$$
+粒子滤波算法：
+
+$$
+\begin{aligned}
+&\quad \bar{\mathcal{X}}_t = \mathcal{X}_t = \emptyset \\
+&\quad \text{for } m = 1 \text{ to } M \text{ do} \\
+&\quad \quad \text{sample } x_t^{[m]} \sim p(x_t \mid u_t, x_{t-1}^{[m]}) \\
+&\quad \quad w_t^{[m]} = p(z_t \mid x_t^{[m]}) \\
+&\quad \quad \bar{\mathcal{X}}_t = \bar{\mathcal{X}}_t + \langle x_t^{[m]}, w_t^{[m]} \rangle \\
+&\quad \text{endfor} \\
+&\quad \text{for } m = 1 \text{ to } M \text{ do} \\
+&\quad \quad \text{draw } i \text{ with probability } \propto w_t^{[i]} \\
+&\quad \quad \text{add } x_t^{[i]} \text{ to } \mathcal{X}_t \\
+&\quad \text{endfor} \\
+&\quad \text{return } \mathcal{X}_t
+\end{aligned}
+$$
+
+# 5 机器人运动
+
+## 速度模型
+
+**Algorithm** `motion_model_velocity`($x_{t}$, $u_{t}$, $x_{t-1}$):
+$$
+\begin{aligned}
+&\mu = \frac{1}{2} \frac{(x-x^{\prime}) \cos \theta + (y-y^{\prime}) \sin \theta}{(y-y^{\prime}) \cos \theta - (x-x^{\prime}) \sin \theta} \\
+&x^{*} = \frac{x + x^{\prime}}{2} + \mu (y - y^{\prime}) \\
+&y^{*} = \frac{y + y^{\prime}}{2} + \mu (x^{\prime} - x) \\
+&r^{*} = \sqrt{(x - x^{*})^{2} + (y - y^{*})^{2}} \\
+&\Delta \theta = \operatorname{atan2}(y^{\prime} - y^{*},\ x^{\prime} - x^{*}) - \operatorname{atan2}(y - y^{*},\ x - x^{*}) \\
+&\hat{v} = \frac{\Delta \theta}{\Delta t} r^{*} \\
+&\hat{\omega} = \frac{\Delta \theta}{\Delta t} \\
+&\hat{\gamma} = \frac{\theta^{\prime} - \theta}{\Delta t} - \hat{\omega}
+\end{aligned}
+$$
+
+$$
+\text{return} \ \operatorname{prob}(v - \hat{v},\ \alpha_{1} v^{2} + \alpha_{2} \omega^{2}) \cdot \operatorname{prob}(\omega - \hat{\omega},\ \alpha_{3} v^{2} + \alpha_{4} \omega^{2}) \cdot \operatorname{prob}(\hat{\gamma},\ \alpha_{5} v^{2} + \alpha_{6} \omega^{2})
+$$
+
+## 里程计模型
+
+**闭式计算**：
+
+Algorithm motion_model_odometry($x_t$, $u_t$, $x_{t-1}$):
+
+$$ \delta_{\text{rot}1}=\operatorname{atan2}(\bar{y}'-\bar{y},\bar{x}'-\bar{x})-\bar{\theta} $$
+$$ \delta_{\text{trans}}=\sqrt{(\bar{x}-\bar{x}')^{2}+(\bar{y}-\bar{y}')^{2}} $$
+$$ \delta_{\text{rot}2}=\bar{\theta}'-\bar{\theta}-\delta_{\text{rot}1} $$
+
+$$ \hat{\delta}_{\text{rot}1}=\operatorname{atan2}(y'-y,x'-x)-\theta $$
+$$ \hat{\delta}_{\text{trans}}=\sqrt{(x-x')^{2}+(y-y')^{2}} $$
+$$ \hat{\delta}_{\text{rot}2}=\theta'-\theta-\hat{\delta}_{\text{rot}1} $$
+
+$$ p_{1}=\text{prob}(\delta_{\text{rot}1}-\hat{\delta}_{\text{rot}1},\alpha_{1}\hat{\delta}_{\text{rot}1}^{2}+\alpha_{2}\hat{\delta}_{\text{trans}}^{2}) $$
+$$ p_{2}=\text{prob}(\delta_{\text{trans}}-\hat{\delta}_{\text{trans}},\alpha_{3}\hat{\delta}_{\text{trans}}^{2}+\alpha_{4}\hat{\delta}_{\text{rot}1}^{2}+\alpha_{4}\hat{\delta}_{\text{rot}2}^{2}) $$
+$$ p_{3}=\text{prob}(\delta_{\text{rot}2}-\hat{\delta}_{\text{rot}2},\alpha_{1}\hat{\delta}_{\text{rot}2}^{2}+\alpha_{2}\hat{\delta}_{\text{trans}}^{2}) $$
+
+return $p_{1}\cdot p_{2}\cdot p_{3}$
+
+**采样算法**：
+
+**Algorithm** `sample_motion_model_odometry`($u_t$, $x_{t-1}$)
+$$
+\begin{aligned}
+&\delta_{rot1} = \operatorname{atan2}(\bar{y}'-\bar{y},\bar{x}'-\bar{x}) - \bar{\theta} \\
+&\delta_{trans} = \sqrt{(\bar{x}-\bar{x}')^2 + (\bar{y}-\bar{y}')^2} \\
+&\delta_{rot2} = \bar{\theta}' - \bar{\theta} - \delta_{rot1} \\
+\\
+&\hat{\delta}_{rot1} = \delta_{rot1} - \text{sample}(\alpha_1\delta_{rot1}^2 + \alpha_2\delta_{trans}^2) \\
+&\hat{\delta}_{trans} = \delta_{trans} - \text{sample}(\alpha_3\delta_{trans}^2 + \alpha_4\delta_{rot1}^2 + \alpha_4\delta_{rot2}^2) \\
+&\hat{\delta}_{rot2} = \delta_{rot2} - \text{sample}(\alpha_1\delta_{rot2}^2 + \alpha_2\delta_{trans}^2) \\
+\\
+&x' = x + \hat{\delta}_{trans}\cos(\theta + \hat{\delta}_{rot1}) \\
+&y' = y + \hat{\delta}_{trans}\sin(\theta + \hat{\delta}_{rot1}) \\
+&\theta' = \theta + \hat{\delta}_{rot1} + \hat{\delta}_{rot2} \\
+\\
+&\text{return } x_t = (x', y', \theta')^T
+\end{aligned}
+$$
+
+## 运动和地图
+
+$$
+p(x_t|u_t,x_{t-1},m)
+$$
+
+# 6 机器人感知
+
+## 地图
+
+**位置地图**：把环境划分成网格，每个格子记录占用概率（0-空闲，1-占用）。
+
+**特征地图**：记录环境中的显著特征，通常是点、角点、圆柱、信标等。
+
+## 测距仪的波束模型
+
+**基本测量**：
+$$
+p(z_t^k \mid x_t, m) = 
+\begin{pmatrix}
+z_{\text{hit}} \\
+z_{\text{short}} \\
+z_{\text{max}} \\
+z_{\text{rand}}
+\end{pmatrix}
+\cdot
+\begin{pmatrix}
+p_{\text{hit}}(z_t^k \mid x_t, m) \\
+p_{\text{short}}(z_t^k \mid x_t, m) \\
+p_{\text{max}}(z_t^k \mid x_t, m) \\
+p_{\text{rand}}(z_t^k \mid x_t, m)
+\end{pmatrix}
+$$
+
+其中权重满足：$z_{\text{hit}} + z_{\text{short}} + z_{\text{max}} + z_{\text{rand}} = 1$
+
+**参数选择**：
+$$
+p(Z\mid X,m,\Theta)
+$$
+通过最大似然估计确定使这个似然最大的固有参数$\Theta$。
+
+$$
+\begin{aligned}
+&\text{Algorithm learn\_intrinsic\_parameters}(Z, X, m): \\
+&\quad \text{repeat until convergence criterion satisfied} \\
+&\quad \quad \text{for all } z_{i} \text{ in } Z \text{ do} \\
+&\quad \quad \quad \eta = \left[ p_{\text{hit}}(z_{i} \mid x_{i}, m) + p_{\text{short}}(z_{i} \mid x_{i}, m) + p_{\text{max}}(z_{i} \mid x_{i}, m) + p_{\text{rand}}(z_{i} \mid x_{i}, m) \right]^{-1} \\
+&\quad \quad \quad \text{calculate } z_{i}^{*} \\
+&\quad \quad \quad e_{i,\text{hit}} = \eta p_{\text{hit}}(z_{i} \mid x_{i}, m) \\
+&\quad \quad \quad e_{i,\text{short}} = \eta p_{\text{short}}(z_{i} \mid x_{i}, m) \\
+&\quad \quad \quad e_{i,\text{max}} = \eta p_{\text{max}}(z_{i} \mid x_{i}, m) \\
+&\quad \quad \quad e_{i,\text{rand}} = \eta p_{\text{rand}}(z_{i} \mid x_{i}, m) \\
+&\quad z_{\text{hit}} = |Z|^{-1} \sum_{i} e_{i,\text{hit}} \\
+&\quad z_{\text{short}} = |Z|^{-1} \sum_{i} e_{i,\text{short}} \\
+&\quad z_{\text{max}} = |Z|^{-1} \sum_{i} e_{i,\text{max}} \\
+&\quad z_{\text{rand}} = |Z|^{-1} \sum_{i} e_{i,\text{rand}} \\
+&\quad \sigma_{\text{hit}} = \sqrt{\frac{1}{\sum_{i} e_{i,\text{hit}}} \sum_{i} e_{i,\text{hit}} (z_{i} - z_{i}^{*})^{2}} \\
+&\quad \lambda_{\text{short}} = \frac{\sum_{i} e_{i,\text{short}}}{\sum_{i} e_{i,\text{short}} z_{i}} \\
+&\quad \text{return } \Theta = \{ z_{\text{hit}}, z_{\text{short}}, z_{\text{max}}, z_{\text{rand}}, \sigma_{\text{hit}}, \lambda_{\text{short}} \}
+\end{aligned}
+$$

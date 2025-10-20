@@ -1445,7 +1445,7 @@ int main() {
 
 以下是关于函数指针的一些基本用法：
 
-### 声明函数指针
+**声明函数指针**
 
 要声明函数指针，需要指定函数的返回类型和参数类型。例如，假设有一个函数 `int add(int a, int b)`，可以声明一个函数指针来指向它：
 
@@ -1455,7 +1455,7 @@ int (*functionPointer)(int, int);
 
 这个声明告诉编译器，`functionPointer` 是一个指向接受两个整数参数并返回整数的函数的指针。
 
-### 赋值和使用函数指针
+**赋值和使用函数指针**
 
 要将函数指针指向特定的函数，可以将函数的名称分配给函数指针，或者使用地址运算符 `&`：
 
@@ -1469,7 +1469,7 @@ functionPointer = add; // 或者 functionPointer = &add;
 int result = functionPointer(3, 4); // 调用 add(3, 4) 并将结果存储在 result 中
 ```
 
-### 函数指针作为参数
+**函数指针作为参数**
 
 函数指针可以作为函数的参数，这通常用于实现回调函数的机制。例如，以下是一个接受函数指针作为参数的函数，它可以执行回调函数：
 
@@ -1496,3 +1496,24 @@ int main() {
 这个示例中，`performOperation` 接受一个函数指针作为参数，并使用该函数指针来执行回调函数。
 
 函数指针是一种强大的工具，它可以实现许多高级的编程技术，如回调函数、动态函数调用和插件系统。然而，要小心使用函数指针，确保类型匹配和安全性，以避免潜在的运行时错误。在现代 C++ 中，函数指针的使用也可以与 C++11 引入的 `std::function` 和 `std::bind` 等功能一起考虑，以实现更灵活和类型安全的回调机制。
+
+## 优先队列
+
+```cpp
+bool operator()(const Node &a, const Node &b) const {
+    return a.f > b.f;  // 如果 a.f > b.f，则 a 的优先级比 b 低
+}
+
+std::priority_queue<Node, std::vector<Node>, NodeCompare> pq;//小值优先
+
+    pq.push({3});
+    pq.push({1});
+    pq.push({4});
+
+    while (!pq.empty())
+    {
+        std::cout << pq.top().f << " "; // 输出：1 3 4
+        pq.pop();
+    }
+```
+
